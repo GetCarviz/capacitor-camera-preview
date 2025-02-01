@@ -1,6 +1,6 @@
 {
   "name": "@carviz/capacitor-camera-preview",
-  "version": "7.0.0",
+  "version": "7.0.1",
   "description": "Fork of the capacitor-community/camera-preview plugin focusing on high resolution photos without bloating up the code.",
   "type": "module",
   "main": "dist/plugin.cjs.js",
@@ -23,7 +23,7 @@
     "prepublishOnly": "npm run build",
     "prepare": "husky && npm run build"
   },
-  "author": "Michael Wolz",
+  "author": "Evan Barberousse",
   "license": "MIT",
   "devDependencies": {
     "@capacitor/android": "^7.0.1",
