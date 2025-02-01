@@ -1,7 +1,7 @@
 <h1 align="center">📷</h1>
 
-<h3 align="center">Capacitor Camera Preview Lite</h3>
-<p align="center"><strong><code>@michaelwolz/camera-preview-lite</code></strong></p>
+<h3 align="center">Capacitor Camera Preview</h3>
+<p align="center"><strong><code>@carviz/capacitor-camera-preview</code></strong></p>
 <br>
 <p align="center"><strong>CAPACITOR 6</strong></p><br>
 
@@ -21,11 +21,11 @@ Version 6 of this plugin requires Capacitor 6.
 # Installation
 
 ```
-yarn add @michaelwolz/camera-preview-lite
+yarn add @carviz/capacitor-camera-preview
 
 or
 
-npm install @michaelwolz/camera-preview-lite
+npm install @carviz/capacitor-camera-preview
 ```
 
 Then run
