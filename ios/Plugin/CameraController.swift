@@ -152,7 +152,7 @@ class CameraController: NSObject {
             // Note that zoomFactor 2 "equals" the regular 1x zoom factor of the native iphone camera app
             // 0.5x however equal a videoZoomFactor of 1. We do not want to use ultra wide angle by default
             // the default videoZoomFactor to 2 in case the current camera device type is .builtInTripleCamera
-            cameraDevice.videoZoomFactor = 2.0
+            cameraDevice.videoZoomFactor = 1.0
         }
     }
     
