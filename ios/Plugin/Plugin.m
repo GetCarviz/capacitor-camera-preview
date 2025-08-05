@@ -11,6 +11,8 @@ CAP_PLUGIN(CameraPreview, "CameraPreview",
            CAP_PLUGIN_METHOD(flip, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(getSupportedFlashModes, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(setFlashMode, CAPPluginReturnPromise);
+           CAP_PLUGIN_METHOD(setZoom, CAPPluginReturnPromise);
+           CAP_PLUGIN_METHOD(getZoom, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(checkPermissions, CAPPluginReturnPromise);
            CAP_PLUGIN_METHOD(requestPermissions, CAPPluginReturnPromise);
 )
