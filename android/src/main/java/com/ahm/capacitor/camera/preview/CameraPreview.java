@@ -188,6 +188,46 @@ public class CameraPreview extends Plugin implements CameraActivity.CameraPrevie
         call.resolve();
     }
 
+    @PluginMethod
+    public void setZoom(PluginCall call) {
+        if (!this.hasCamera(call)) {
+            call.reject("Camera is not running");
+            return;
+        }
+
+        Double zoomValue = call.getDouble("zoom");
+        if (zoomValue == null) {
+            call.reject("zoom parameter is missing");
+            return;
+        }
+
+        float zoomLevel = zoomValue.floatValue();
+        if (zoomLevel < 1.0f) {
+            call.reject("zoom level must be >= 1.0");
+            return;
+        }
+
+        boolean success = fragment.setZoom(zoomLevel);
+        if (success) {
+            call.resolve();
+        } else {
+            call.reject("Failed to set zoom level");
+        }
+    }
+
+    @PluginMethod
+    public void getZoom(PluginCall call) {
+        if (!this.hasCamera(call)) {
+            call.reject("Camera is not running");
+            return;
+        }
+
+        float currentZoom = fragment.getZoom();
+        JSObject result = new JSObject();
+        result.put("zoom", currentZoom);
+        call.resolve(result);
+    }
+
     @PermissionCallback
     private void handleCameraPermissionResult(PluginCall call) {
         if (PermissionState.GRANTED.equals(getPermissionState(CAMERA_PERMISSION_ALIAS))) {

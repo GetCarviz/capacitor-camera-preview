@@ -59,6 +59,11 @@ export interface CameraOpacityOptions {
   opacity?: number;
 }
 
+export interface CameraZoomOptions {
+  /** The zoom level to set, where 1.0 is the default (no zoom) */
+  zoom: number;
+}
+
 export interface CameraPreviewPlugin {
   /** Starts the camera preview instance */
   start(options: CameraPreviewOptions): Promise<{}>;
@@ -76,6 +81,10 @@ export interface CameraPreviewPlugin {
   flip(): Promise<void>;
   /** Changes the opacity of the shown camera preview - Android / Web only */
   setOpacity(options: CameraOpacityOptions): Promise<{}>;
+  /** Set the zoom level of the camera - Android / iOS only */
+  setZoom(options: CameraZoomOptions): Promise<void>;
+  /** Get the current zoom level of the camera - Android / iOS only */
+  getZoom(): Promise<{ zoom: number }>;
   /** Check camera permission */
   checkPermissions(): Promise<PermissionState>;
   /** Request camera permission */

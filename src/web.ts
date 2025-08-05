@@ -7,6 +7,7 @@ import type {
   CameraPreviewFlashMode,
   CameraSampleOptions,
   CameraOpacityOptions,
+  CameraZoomOptions,
 } from './definitions';
 
 export class CameraPreviewWeb extends WebPlugin implements CameraPreviewPlugin {
@@ -153,6 +154,14 @@ export class CameraPreviewWeb extends WebPlugin implements CameraPreviewPlugin {
     if (!!video && !!_options['opacity']) {
       video.style.setProperty('opacity', _options['opacity'].toString());
     }
+  }
+
+  async setZoom(_options: CameraZoomOptions): Promise<any> {
+    throw new Error('setZoom not supported under the web platform');
+  }
+
+  async getZoom(): Promise<any> {
+    throw new Error('getZoom not supported under the web platform');
   }
 
   async checkPermissions(): Promise<PermissionState> {

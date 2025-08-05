@@ -388,6 +388,51 @@ class CameraController: NSObject {
         target.addGestureRecognizer(pinchGesture)
     }
     
+    /**
+     Set the zoom level of the camera
+     
+     - Parameters:
+        - zoomLevel: The zoom level to set (1.0 = no zoom, higher values = more zoom)
+     - Throws: `CameraControllerError.noCamerasAvailable` if camera is not available
+     */
+    public func setZoom(zoomLevel: CGFloat) throws {
+        guard let device = self.currentCamera else {
+            throw CameraControllerError.noCamerasAvailable
+        }
+        
+        func minMaxZoom(_ factor: CGFloat) -> CGFloat {
+            return max(1.0, min(factor, device.activeFormat.videoMaxZoomFactor))
+        }
+        
+        let constrainedZoomFactor = minMaxZoom(zoomLevel)
+        
+        do {
+            try device.lockForConfiguration()
+            defer { device.unlockForConfiguration() }
+            
+            device.videoZoomFactor = constrainedZoomFactor
+            
+            // Update our stored zoom factor
+            videoZoomFactor = constrainedZoomFactor
+        } catch {
+            throw CameraControllerError.invalidOperation
+        }
+    }
+    
+    /**
+     Get the current zoom level of the camera
+     
+     - Returns: The current zoom level (1.0 = no zoom, higher values = more zoom)
+     - Throws: `CameraControllerError.noCamerasAvailable` if camera is not available
+     */
+    public func getZoom() throws -> CGFloat {
+        guard let device = self.currentCamera else {
+            throw CameraControllerError.noCamerasAvailable
+        }
+        
+        return device.videoZoomFactor
+    }
+    
 }
 
 extension UIImage {
@@ -513,11 +558,15 @@ extension CameraController: UIGestureRecognizerDelegate {
         }
 
         switch pinch.state {
-        case .began: fallthrough
+        case .began:
+            // Store the current zoom factor when pinch begins
+            videoZoomFactor = device.videoZoomFactor
         case .changed:
-            let newScaleFactor = minMaxZoom(pinch.scale)
+            // Calculate new zoom factor based on current zoom and pinch scale
+            let newScaleFactor = minMaxZoom(videoZoomFactor * pinch.scale)
             update(scale: newScaleFactor)
         case .ended:
+            // Update stored zoom factor to the final zoom level
             videoZoomFactor = device.videoZoomFactor
         default: break
         }

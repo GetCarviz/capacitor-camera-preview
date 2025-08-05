@@ -828,4 +828,105 @@ public class CameraActivity extends Fragment {
         float y = event.getY(0) - event.getY(1);
         return (float) Math.sqrt(x * x + y * y);
     }
+
+    /**
+     * Set the zoom level of the camera
+     * @param zoomLevel The zoom level to set (1.0 = no zoom, higher values = more zoom)
+     * @return true if zoom was set successfully, false otherwise
+     */
+    public boolean setZoom(float zoomLevel) {
+        if (mCamera == null) {
+            Log.e(TAG, "Camera is null, cannot set zoom");
+            return false;
+        }
+
+        try {
+            Camera.Parameters params = mCamera.getParameters();
+            if (!params.isZoomSupported()) {
+                Log.e(TAG, "Zoom is not supported on this device");
+                return false;
+            }
+
+            int maxZoom = params.getMaxZoom();
+            
+            // Convert zoom level (1.0-based) to zoom index (0-based)
+            // Zoom level 1.0 = zoom index 0 (no zoom)
+            // Higher zoom levels map proportionally to the max zoom index
+            int zoomIndex;
+            if (zoomLevel <= 1.0f) {
+                zoomIndex = 0;
+            } else {
+                // Map zoom level linearly to zoom index range
+                zoomIndex = Math.round((zoomLevel - 1.0f) * maxZoom / (getMaxZoomLevel() - 1.0f));
+                zoomIndex = Math.min(zoomIndex, maxZoom);
+            }
+
+            params.setZoom(zoomIndex);
+            mCamera.setParameters(params);
+            
+            Log.d(TAG, "Zoom set to level: " + zoomLevel + " (index: " + zoomIndex + ")");
+            return true;
+        } catch (Exception e) {
+            Log.e(TAG, "Error setting zoom: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get the current zoom level of the camera
+     * @return The current zoom level (1.0 = no zoom, higher values = more zoom)
+     */
+    public float getZoom() {
+        if (mCamera == null) {
+            Log.e(TAG, "Camera is null, cannot get zoom");
+            return 1.0f;
+        }
+
+        try {
+            Camera.Parameters params = mCamera.getParameters();
+            if (!params.isZoomSupported()) {
+                Log.d(TAG, "Zoom is not supported on this device");
+                return 1.0f;
+            }
+
+            int currentZoomIndex = params.getZoom();
+            int maxZoom = params.getMaxZoom();
+            
+            // Convert zoom index (0-based) to zoom level (1.0-based)
+            if (currentZoomIndex == 0) {
+                return 1.0f;
+            } else {
+                // Map zoom index linearly to zoom level range
+                float zoomLevel = 1.0f + (currentZoomIndex * (getMaxZoomLevel() - 1.0f) / maxZoom);
+                return zoomLevel;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting zoom: " + e.getMessage());
+            return 1.0f;
+        }
+    }
+
+    /**
+     * Get the maximum zoom level supported by the camera
+     * @return The maximum zoom level
+     */
+    private float getMaxZoomLevel() {
+        if (mCamera == null) {
+            return 1.0f;
+        }
+
+        try {
+            Camera.Parameters params = mCamera.getParameters();
+            if (!params.isZoomSupported()) {
+                return 1.0f;
+            }
+
+            // Most Android cameras support up to 10x zoom, but we'll use a reasonable default
+            // This can be adjusted based on specific device capabilities
+            return 10.0f;
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting max zoom level: " + e.getMessage());
+            return 1.0f;
+        }
+    }
 }

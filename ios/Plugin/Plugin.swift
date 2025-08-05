@@ -203,6 +203,50 @@ public class CameraPreview: CAPPlugin {
     }
 
     /**
+     Set the zoom level of the camera
+     */
+    @objc func setZoom(_ call: CAPPluginCall) {
+        guard let captureSession = self.cameraController.captureSession, captureSession.isRunning else {
+            call.reject("camera is not running")
+            return
+        }
+        
+        guard let zoomLevel = call.getDouble("zoom") else {
+            call.reject("zoom parameter is missing")
+            return
+        }
+        
+        if zoomLevel < 1.0 {
+            call.reject("zoom level must be >= 1.0")
+            return
+        }
+        
+        do {
+            try self.cameraController.setZoom(zoomLevel: CGFloat(zoomLevel))
+            call.resolve()
+        } catch {
+            call.reject("failed to set zoom level: \(error.localizedDescription)")
+        }
+    }
+
+    /**
+     Get the current zoom level of the camera
+     */
+    @objc func getZoom(_ call: CAPPluginCall) {
+        guard let captureSession = self.cameraController.captureSession, captureSession.isRunning else {
+            call.reject("camera is not running")
+            return
+        }
+        
+        do {
+            let currentZoom = try self.cameraController.getZoom()
+            call.resolve(["zoom": currentZoom])
+        } catch {
+            call.reject("failed to get zoom level: \(error.localizedDescription)")
+        }
+    }
+
+    /**
      Helper method for initializing the plugin settings based on the Capacitor call
      */
     private func initializePluginSettings(call: CAPPluginCall) {
