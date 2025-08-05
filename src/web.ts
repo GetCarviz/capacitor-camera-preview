@@ -1,4 +1,5 @@
 import { WebPlugin } from '@capacitor/core';
+import type { PluginListenerHandle } from '@capacitor/core';
 
 import type {
   CameraPreviewOptions,
@@ -170,5 +171,13 @@ export class CameraPreviewWeb extends WebPlugin implements CameraPreviewPlugin {
 
   async requestPermissions(): Promise<PermissionState> {
     throw new Error('requestPermissions not supported under the web platform');
+  }
+
+  async addListener(_eventName: string, _listenerFunc: (info: any) => void): Promise<PluginListenerHandle> {
+    throw new Error('addListener not supported under the web platform');
+  }
+
+  async removeAllListeners(): Promise<void> {
+    throw new Error('removeAllListeners not supported under the web platform');
   }
 }

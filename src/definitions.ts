@@ -1,4 +1,4 @@
-import type { PermissionState } from '@capacitor/core';
+import type { PermissionState, PluginListenerHandle } from '@capacitor/core';
 
 export type CameraPosition = 'rear' | 'front';
 export interface CameraPreviewOptions {
@@ -64,6 +64,11 @@ export interface CameraZoomOptions {
   zoom: number;
 }
 
+export interface CameraZoomChangeEvent {
+  /** The new zoom level */
+  zoom: number;
+}
+
 export interface CameraPreviewPlugin {
   /** Starts the camera preview instance */
   start(options: CameraPreviewOptions): Promise<{}>;
@@ -89,4 +94,9 @@ export interface CameraPreviewPlugin {
   checkPermissions(): Promise<PermissionState>;
   /** Request camera permission */
   requestPermissions(): Promise<PermissionState>;
+
+  /** Listen for zoom changes - Android / iOS only */
+  addListener(eventName: 'zoomChanged', listenerFunc: (event: CameraZoomChangeEvent) => void): Promise<PluginListenerHandle>;
+  /** Remove all listeners for this plugin */
+  removeAllListeners(): Promise<void>;
 }

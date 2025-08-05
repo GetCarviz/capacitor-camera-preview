@@ -28,7 +28,7 @@ import java.util.List;
 import org.json.JSONArray;
 
 @CapacitorPlugin(name = "CameraPreview", permissions = { @Permission(strings = { CAMERA }, alias = CameraPreview.CAMERA_PERMISSION_ALIAS) })
-public class CameraPreview extends Plugin implements CameraActivity.CameraPreviewListener {
+public class CameraPreview extends Plugin implements CameraActivity.CameraPreviewListener, CameraActivity.ZoomChangeListener {
 
     static final String CAMERA_PERMISSION_ALIAS = "camera";
 
@@ -271,6 +271,7 @@ public class CameraPreview extends Plugin implements CameraActivity.CameraPrevie
         fragment.toBack = toBack;
         fragment.enableOpacity = enableOpacity;
         fragment.enableZoom = enableZoom;
+        fragment.setZoomChangeListener(this);
 
         bridge
             .getActivity()
@@ -393,6 +394,13 @@ public class CameraPreview extends Plugin implements CameraActivity.CameraPrevie
         PluginCall pluginCall = bridge.getSavedCall(cameraStartCallbackId);
         pluginCall.resolve();
         bridge.releaseCall(pluginCall);
+    }
+
+    @Override
+    public void onZoomChanged(float zoom) {
+        JSObject result = new JSObject();
+        result.put("zoom", zoom);
+        notifyListeners("zoomChanged", result);
     }
 
     private boolean hasView(PluginCall call) {

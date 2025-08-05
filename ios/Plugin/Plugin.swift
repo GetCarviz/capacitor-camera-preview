@@ -6,7 +6,7 @@ import AVFoundation
  * here: https://capacitor.ionicframework.com/docs/plugins/ios
  */
 @objc(CameraPreview)
-public class CameraPreview: CAPPlugin {
+public class CameraPreview: CAPPlugin, CameraControllerDelegate {
     let cameraController = CameraController()
     var cameraPosition: CameraPosition = .rear
     var x: CGFloat = 0.0
@@ -20,6 +20,13 @@ public class CameraPreview: CAPPlugin {
     var storeToFile = false
     var enableZoom = false
     var enableHighResolution = false
+    
+    // MARK: - CameraControllerDelegate
+    
+    func cameraController(_ controller: CameraController, didChangeZoomTo zoomLevel: CGFloat) {
+        // Emit zoom change event to JavaScript
+        notifyListeners("zoomChanged", data: ["zoom": zoomLevel])
+    }
 
     /**
      Start the camera preview in a new UIView
@@ -38,6 +45,9 @@ public class CameraPreview: CAPPlugin {
                 call.reject("camera already started")
                 return
             }
+
+            // Set up delegate for zoom change events
+            self?.cameraController.delegate = self
 
             self?.cameraController.prepare(cameraPosition: self?.cameraPosition, enableHighResolution: self?.enableHighResolution ?? false) { error in
                 if let error = error {

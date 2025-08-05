@@ -47,7 +47,12 @@ public class CameraActivity extends Fragment {
         void onCameraStarted();
     }
 
+    public interface ZoomChangeListener {
+        void onZoomChanged(float zoomLevel);
+    }
+
     private CameraPreviewListener eventListener;
+    private ZoomChangeListener zoomChangeListener;
     private static final String TAG = "CameraActivity";
     public FrameLayout mainLayout;
     public FrameLayout frameContainerLayout;
@@ -89,6 +94,10 @@ public class CameraActivity extends Fragment {
 
     public void setEventListener(CameraPreviewListener listener) {
         eventListener = listener;
+    }
+
+    public void setZoomChangeListener(ZoomChangeListener listener) {
+        zoomChangeListener = listener;
     }
 
     private String appResourcesPackage;
@@ -281,6 +290,13 @@ public class CameraActivity extends Fragment {
                             mDist = newDist;
                             params.setZoom(zoom);
                             mCamera.setParameters(params);
+                            
+                            // Notify listener of zoom change during pinch
+                            if (zoomChangeListener != null) {
+                                // Convert zoom index back to zoom level for consistency
+                                float zoomLevel = 1.0f + (zoom * (getMaxZoomLevel() - 1.0f) / maxZoom);
+                                zoomChangeListener.onZoomChanged(zoomLevel);
+                            }
                         }
                     }
                 }
@@ -865,6 +881,12 @@ public class CameraActivity extends Fragment {
             mCamera.setParameters(params);
             
             Log.d(TAG, "Zoom set to level: " + zoomLevel + " (index: " + zoomIndex + ")");
+            
+            // Notify listener of zoom change
+            if (zoomChangeListener != null) {
+                zoomChangeListener.onZoomChanged(zoomLevel);
+            }
+            
             return true;
         } catch (Exception e) {
             Log.e(TAG, "Error setting zoom: " + e.getMessage());

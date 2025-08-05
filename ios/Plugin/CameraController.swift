@@ -15,6 +15,9 @@ public enum CameraPosition {
     case rear
 }
 
+protocol CameraControllerDelegate: AnyObject {
+    func cameraController(_ controller: CameraController, didChangeZoomTo zoomLevel: CGFloat)
+}
 
 extension CameraControllerError: LocalizedError {
     public var errorDescription: String? {
@@ -54,6 +57,9 @@ class CameraController: NSObject {
 
     /** Video zoom factor that is used for manually zooming in and out via pinch gesture */
     var videoZoomFactor: CGFloat = 1
+    
+    /** Delegate for camera events */
+    weak var delegate: CameraControllerDelegate?
 
     public func prepare(cameraPosition: CameraPosition?, enableHighResolution isHighResolutionPhotoEnabled: Bool, completionHandler: @escaping (Error?) -> Void) {
         // Set up capture session
@@ -414,6 +420,9 @@ class CameraController: NSObject {
             
             // Update our stored zoom factor
             videoZoomFactor = constrainedZoomFactor
+            
+            // Notify delegate of zoom change
+            delegate?.cameraController(self, didChangeZoomTo: constrainedZoomFactor)
         } catch {
             throw CameraControllerError.invalidOperation
         }
@@ -552,6 +561,9 @@ extension CameraController: UIGestureRecognizerDelegate {
                 defer { device.unlockForConfiguration() }
 
                 device.videoZoomFactor = factor
+                
+                // Notify delegate of zoom change during pinch
+                delegate?.cameraController(self, didChangeZoomTo: factor)
             } catch {
                 debugPrint(error)
             }
