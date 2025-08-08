@@ -43,6 +43,7 @@ class CameraController: NSObject {
     var captureSession: AVCaptureSession?
     
     var photoOutput = AVCapturePhotoOutput()
+    var videoDataOutput = AVCaptureVideoDataOutput()
     var photoCaptureCompletionBlock: ((UIImage?, Error?) -> Void)?
     var sampleBufferCaptureCompletionBlock: ((UIImage?, Error?) -> Void)?
     
@@ -89,6 +90,13 @@ class CameraController: NSObject {
         self.photoOutput.isHighResolutionCaptureEnabled = isHighResolutionPhotoEnabled
         if captureSession.canAddOutput(self.photoOutput) {
             captureSession.addOutput(self.photoOutput)
+        }
+        
+        // Configure video data output for sample capture
+        self.videoDataOutput.setSampleBufferDelegate(self, queue: DispatchQueue(label: "videoQueue"))
+        self.videoDataOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)]
+        if captureSession.canAddOutput(self.videoDataOutput) {
+            captureSession.addOutput(self.videoDataOutput)
         }
         
         captureSession.startRunning()
@@ -293,6 +301,7 @@ class CameraController: NSObject {
             return
         }
 
+        // Store the completion block to be called when we receive the next video frame
         self.sampleBufferCaptureCompletionBlock = completion
     }
 
@@ -514,6 +523,41 @@ extension CameraController: AVCapturePhotoCaptureDelegate {
         }
         
         self.photoCaptureCompletionBlock?(image.fixedOrientation(), nil)
+    }
+}
+
+extension CameraController: AVCaptureVideoDataOutputSampleBufferDelegate {
+    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        // Only process if we have a pending sample capture request
+        guard let completion = self.sampleBufferCaptureCompletionBlock else { return }
+        
+        // Clear the completion block to avoid capturing multiple frames for one request
+        self.sampleBufferCaptureCompletionBlock = nil
+        
+        // Convert sample buffer to UIImage
+        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
+            DispatchQueue.main.async {
+                completion(nil, CameraControllerError.unknown)
+            }
+            return
+        }
+        
+        let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
+        let context = CIContext()
+        
+        guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else {
+            DispatchQueue.main.async {
+                completion(nil, CameraControllerError.unknown)
+            }
+            return
+        }
+        
+        let image = UIImage(cgImage: cgImage)
+        
+        // Call completion on main queue
+        DispatchQueue.main.async {
+            completion(image, nil)
+        }
     }
 }
 
