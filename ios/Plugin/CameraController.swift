@@ -97,6 +97,11 @@ class CameraController: NSObject {
         self.videoDataOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)]
         if captureSession.canAddOutput(self.videoDataOutput) {
             captureSession.addOutput(self.videoDataOutput)
+            
+            // Set the video orientation to match the preview layer
+            if let connection = self.videoDataOutput.connection(with: .video) {
+                connection.videoOrientation = self.previewLayer.connection?.videoOrientation ?? .portrait
+            }
         }
         
         captureSession.startRunning()
@@ -222,6 +227,11 @@ class CameraController: NSObject {
 
         previewLayer.connection?.videoOrientation = videoOrientation
         photoOutput.connections.forEach { $0.videoOrientation = videoOrientation }
+        
+        // Also update video data output orientation
+        if let connection = videoDataOutput.connection(with: .video) {
+            connection.videoOrientation = videoOrientation
+        }
     }
 
     public func switchCameras() throws {
@@ -542,7 +552,14 @@ extension CameraController: AVCaptureVideoDataOutputSampleBufferDelegate {
             return
         }
         
-        let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
+        // Create CIImage from pixel buffer
+        var ciImage = CIImage(cvPixelBuffer: pixelBuffer)
+        
+        // Apply orientation correction based on video orientation
+        let videoOrientation = connection.videoOrientation
+        let transform = self.transformForVideoOrientation(videoOrientation, pixelBuffer: pixelBuffer)
+        ciImage = ciImage.transformed(by: transform)
+        
         let context = CIContext()
         
         guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else {
@@ -552,12 +569,41 @@ extension CameraController: AVCaptureVideoDataOutputSampleBufferDelegate {
             return
         }
         
-        let image = UIImage(cgImage: cgImage)
+        let image = UIImage(cgImage: cgImage, scale: 1.0, orientation: .up)
         
         // Call completion on main queue
         DispatchQueue.main.async {
             completion(image, nil)
         }
+    }
+    
+    private func transformForVideoOrientation(_ orientation: AVCaptureVideoOrientation, pixelBuffer: CVPixelBuffer) -> CGAffineTransform {
+        let bufferWidth = CGFloat(CVPixelBufferGetWidth(pixelBuffer))
+        let bufferHeight = CGFloat(CVPixelBufferGetHeight(pixelBuffer))
+        
+        var transform = CGAffineTransform.identity
+        
+        switch orientation {
+        case .portrait:
+            // No rotation needed for portrait
+            break
+        case .portraitUpsideDown:
+            // Rotate 180 degrees
+            transform = transform.translatedBy(x: bufferWidth, y: bufferHeight)
+            transform = transform.rotated(by: .pi)
+        case .landscapeRight:
+            // Rotate 90 degrees clockwise
+            transform = transform.translatedBy(x: bufferHeight, y: 0)
+            transform = transform.rotated(by: .pi / 2)
+        case .landscapeLeft:
+            // Rotate 90 degrees counter-clockwise
+            transform = transform.translatedBy(x: 0, y: bufferWidth)
+            transform = transform.rotated(by: -.pi / 2)
+        @unknown default:
+            break
+        }
+        
+        return transform
     }
 }
 
