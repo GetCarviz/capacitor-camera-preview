@@ -94,7 +94,7 @@ class CameraController: NSObject {
         
         // Configure video data output for sample capture
         self.videoDataOutput.setSampleBufferDelegate(self, queue: DispatchQueue(label: "videoQueue"))
-        self.videoDataOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)]
+        self.videoDataOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_420YpCbCr8BiPlanarFullRange)]
         if captureSession.canAddOutput(self.videoDataOutput) {
             captureSession.addOutput(self.videoDataOutput)
             
@@ -544,32 +544,13 @@ extension CameraController: AVCaptureVideoDataOutputSampleBufferDelegate {
         // Clear the completion block to avoid capturing multiple frames for one request
         self.sampleBufferCaptureCompletionBlock = nil
         
-        // Convert sample buffer to UIImage
-        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
+        // Convert sample buffer to UIImage using a more direct approach
+        guard let image = self.imageFromSampleBuffer(sampleBuffer) else {
             DispatchQueue.main.async {
                 completion(nil, CameraControllerError.unknown)
             }
             return
         }
-        
-        // Create CIImage from pixel buffer
-        var ciImage = CIImage(cvPixelBuffer: pixelBuffer)
-        
-        // Apply orientation correction based on video orientation
-        let videoOrientation = connection.videoOrientation
-        let transform = self.transformForVideoOrientation(videoOrientation, pixelBuffer: pixelBuffer)
-        ciImage = ciImage.transformed(by: transform)
-        
-        let context = CIContext()
-        
-        guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else {
-            DispatchQueue.main.async {
-                completion(nil, CameraControllerError.unknown)
-            }
-            return
-        }
-        
-        let image = UIImage(cgImage: cgImage, scale: 1.0, orientation: .up)
         
         // Call completion on main queue
         DispatchQueue.main.async {
@@ -577,33 +558,24 @@ extension CameraController: AVCaptureVideoDataOutputSampleBufferDelegate {
         }
     }
     
-    private func transformForVideoOrientation(_ orientation: AVCaptureVideoOrientation, pixelBuffer: CVPixelBuffer) -> CGAffineTransform {
-        let bufferWidth = CGFloat(CVPixelBufferGetWidth(pixelBuffer))
-        let bufferHeight = CGFloat(CVPixelBufferGetHeight(pixelBuffer))
-        
-        var transform = CGAffineTransform.identity
-        
-        switch orientation {
-        case .portrait:
-            // No rotation needed for portrait
-            break
-        case .portraitUpsideDown:
-            // Rotate 180 degrees
-            transform = transform.translatedBy(x: bufferWidth, y: bufferHeight)
-            transform = transform.rotated(by: .pi)
-        case .landscapeRight:
-            // Rotate 90 degrees clockwise
-            transform = transform.translatedBy(x: bufferHeight, y: 0)
-            transform = transform.rotated(by: .pi / 2)
-        case .landscapeLeft:
-            // Rotate 90 degrees counter-clockwise
-            transform = transform.translatedBy(x: 0, y: bufferWidth)
-            transform = transform.rotated(by: -.pi / 2)
-        @unknown default:
-            break
+    private func imageFromSampleBuffer(_ sampleBuffer: CMSampleBuffer) -> UIImage? {
+        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
+            return nil
         }
         
-        return transform
+        // Use CIImage for YUV to RGB conversion, but ensure we get the full extent
+        let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
+        let context = CIContext()
+        
+        // Make sure we use the full extent of the image
+        let rect = CGRect(x: 0, y: 0, width: ciImage.extent.width, height: ciImage.extent.height)
+        
+        guard let cgImage = context.createCGImage(ciImage, from: rect) else {
+            return nil
+        }
+        
+        // Create UIImage with proper orientation
+        return UIImage(cgImage: cgImage, scale: 1.0, orientation: .up)
     }
 }
 
