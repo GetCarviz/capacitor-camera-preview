@@ -311,8 +311,41 @@ class CameraController: NSObject {
             return
         }
 
-        // Store the completion block to be called when we receive the next video frame
-        self.sampleBufferCaptureCompletionBlock = completion
+        // Capture the preview layer content directly - this mimics what the user sees
+        DispatchQueue.main.async {
+            guard let image = self.capturePreviewLayerAsImage() else {
+                completion(nil, CameraControllerError.unknown)
+                return
+            }
+            
+            // Apply the same orientation fix as the regular capture function
+            let orientationFixedImage = image.fixedOrientation() ?? image
+            completion(orientationFixedImage, nil)
+        }
+    }
+    
+    private func capturePreviewLayerAsImage() -> UIImage? {
+        // Ensure we're on the main thread
+        assert(Thread.isMainThread)
+        
+        // Get the preview layer bounds
+        let bounds = previewLayer.bounds
+        
+        // Create a graphics context
+        UIGraphicsBeginImageContextWithOptions(bounds.size, false, UIScreen.main.scale)
+        guard let context = UIGraphicsGetCurrentContext() else {
+            UIGraphicsEndImageContext()
+            return nil
+        }
+        
+        // Render the preview layer into the context
+        previewLayer.render(in: context)
+        
+        // Get the image from the context
+        let image = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        
+        return image
     }
 
     func getSupportedFlashModes() throws -> [String] {
@@ -538,44 +571,8 @@ extension CameraController: AVCapturePhotoCaptureDelegate {
 
 extension CameraController: AVCaptureVideoDataOutputSampleBufferDelegate {
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        // Only process if we have a pending sample capture request
-        guard let completion = self.sampleBufferCaptureCompletionBlock else { return }
-        
-        // Clear the completion block to avoid capturing multiple frames for one request
-        self.sampleBufferCaptureCompletionBlock = nil
-        
-        // Convert sample buffer to UIImage using a more direct approach
-        guard let image = self.imageFromSampleBuffer(sampleBuffer) else {
-            DispatchQueue.main.async {
-                completion(nil, CameraControllerError.unknown)
-            }
-            return
-        }
-        
-        // Call completion on main queue
-        DispatchQueue.main.async {
-            completion(image, nil)
-        }
-    }
-    
-    private func imageFromSampleBuffer(_ sampleBuffer: CMSampleBuffer) -> UIImage? {
-        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
-            return nil
-        }
-        
-        // Use CIImage for YUV to RGB conversion, but ensure we get the full extent
-        let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
-        let context = CIContext()
-        
-        // Make sure we use the full extent of the image
-        let rect = CGRect(x: 0, y: 0, width: ciImage.extent.width, height: ciImage.extent.height)
-        
-        guard let cgImage = context.createCGImage(ciImage, from: rect) else {
-            return nil
-        }
-        
-        // Create UIImage with proper orientation
-        return UIImage(cgImage: cgImage, scale: 1.0, orientation: .up)
+        // We don't actually need to process video frames anymore since we're using preview layer capture
+        // This method is kept for compatibility but does nothing
     }
 }
 
