@@ -94,7 +94,7 @@ class CameraController: NSObject {
         
         // Configure video data output for sample capture
         self.videoDataOutput.setSampleBufferDelegate(self, queue: DispatchQueue(label: "videoQueue"))
-        self.videoDataOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_420YpCbCr8BiPlanarFullRange)]
+        self.videoDataOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)]
         if captureSession.canAddOutput(self.videoDataOutput) {
             captureSession.addOutput(self.videoDataOutput)
             
@@ -311,41 +311,8 @@ class CameraController: NSObject {
             return
         }
 
-        // Capture the preview layer content directly - this mimics what the user sees
-        DispatchQueue.main.async {
-            guard let image = self.capturePreviewLayerAsImage() else {
-                completion(nil, CameraControllerError.unknown)
-                return
-            }
-            
-            // Apply the same orientation fix as the regular capture function
-            let orientationFixedImage = image.fixedOrientation() ?? image
-            completion(orientationFixedImage, nil)
-        }
-    }
-    
-    private func capturePreviewLayerAsImage() -> UIImage? {
-        // Ensure we're on the main thread
-        assert(Thread.isMainThread)
-        
-        // Get the preview layer bounds
-        let bounds = previewLayer.bounds
-        
-        // Create a graphics context
-        UIGraphicsBeginImageContextWithOptions(bounds.size, false, UIScreen.main.scale)
-        guard let context = UIGraphicsGetCurrentContext() else {
-            UIGraphicsEndImageContext()
-            return nil
-        }
-        
-        // Render the preview layer into the context
-        previewLayer.render(in: context)
-        
-        // Get the image from the context
-        let image = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-        
-        return image
+        // Store the completion block to be called when we receive the next video frame
+        self.sampleBufferCaptureCompletionBlock = completion
     }
 
     func getSupportedFlashModes() throws -> [String] {
@@ -571,8 +538,45 @@ extension CameraController: AVCapturePhotoCaptureDelegate {
 
 extension CameraController: AVCaptureVideoDataOutputSampleBufferDelegate {
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        // We don't actually need to process video frames anymore since we're using preview layer capture
-        // This method is kept for compatibility but does nothing
+        // Only process if we have a pending sample capture request
+        guard let completion = self.sampleBufferCaptureCompletionBlock else { return }
+        
+        // Clear the completion block to avoid capturing multiple frames for one request
+        self.sampleBufferCaptureCompletionBlock = nil
+        
+        // Convert sample buffer to UIImage using a simple, reliable approach
+        guard let image = self.imageFromSampleBuffer(sampleBuffer) else {
+            DispatchQueue.main.async {
+                completion(nil, CameraControllerError.unknown)
+            }
+            return
+        }
+        
+        // Call completion on main queue
+        DispatchQueue.main.async {
+            completion(image, nil)
+        }
+    }
+    
+    private func imageFromSampleBuffer(_ sampleBuffer: CMSampleBuffer) -> UIImage? {
+        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
+            return nil
+        }
+        
+        // Create CIImage from pixel buffer - this preserves the full frame
+        let ciImage = CIImage(cvPixelBuffer: pixelBuffer)
+        
+        // Use CIContext to render the image
+        let context = CIContext(options: [.useSoftwareRenderer: false])
+        
+        // Create CGImage from the FULL extent of the CIImage
+        guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else {
+            return nil
+        }
+        
+        // Create UIImage and apply orientation fix like the capture function does
+        let image = UIImage(cgImage: cgImage, scale: 1.0, orientation: .up)
+        return image.fixedOrientation()
     }
 }
 
