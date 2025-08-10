@@ -1,0 +1,28 @@
+PODS:
+  - Capacitor (7.4.2):
+    - CapacitorCordova
+  - CapacitorCordova (7.4.2)
+  - CarvizCapacitorCameraPreview (7.2.3):
+    - Capacitor
+
+DEPENDENCIES:
+  - "Capacitor (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
+  - CarvizCapacitorCameraPreview (from `../../../..`)
+
+EXTERNAL SOURCES:
+  Capacitor:
+    :path: "../../node_modules/@capacitor/ios"
+  CapacitorCordova:
+    :path: "../../node_modules/@capacitor/ios"
+  CarvizCapacitorCameraPreview:
+    :path: "../../../.."
+
+SPEC CHECKSUMS:
+  Capacitor: 156d98aba46ec01dde72c4bbb92fa626837cad29
+  CapacitorCordova: 5e58d04631bc5094894ac106e2bf1da18a9e6151
+  CarvizCapacitorCameraPreview: a1657369d31cc26c3634afe8e3e0a2ade8c0476a
+
+PODFILE CHECKSUM: 9f443577e0a820a71e932bd588ad19e6be6990db
+
+COCOAPODS: 1.15.2

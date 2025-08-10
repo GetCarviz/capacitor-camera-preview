@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Preview Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .camera-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            background: #000;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .button:hover {
+            background: #0056CC;
+        }
+
+        .button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .capture-button {
+            background: #FF3B30;
+        }
+
+        .capture-button:hover {
+            background: #D70015;
+        }
+
+        .sample-button {
+            background: #34C759;
+        }
+
+        .sample-button:hover {
+            background: #248A3D;
+        }
+
+        .result-container {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f8f8;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+
+        .result-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+        }
+
+        .info-text {
+            font-size: 14px;
+            color: #666;
+            margin: 5px 0;
+        }
+
+        .status {
+            font-weight: bold;
+            padding: 8px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .comparison {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .comparison-item {
+            flex: 1;
+            text-align: center;
+        }
+
+        .comparison-item h4 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+        }
+
+        .comparison-item img {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎥 Camera Preview Test</h1>
+
+        <div class="camera-container" id="camera-container">
+            <p style="color: white; text-align: center; margin-top: 130px;">Camera preview will appear here</p>
+        </div>
+
+        <button class="button" onclick="startCamera()">📷 Start Camera</button>
+        <button class="button" onclick="stopCamera()">⏹️ Stop Camera</button>
+
+        <hr style="margin: 20px 0;">
+
+        <h3>Test Captures</h3>
+        <button class="button capture-button" onclick="testCapture()">📸 Test capture() - WITH SOUND</button>
+        <button class="button sample-button" onclick="testCaptureSample()">🤫 Test captureSample() - SILENT</button>
+
+        <button class="button" onclick="compareImages()">🔍 Compare Both Methods</button>
+        <button class="button" onclick="clearResults()">🗑️ Clear Results</button>
+
+        <div id="status"></div>
+        <div id="results"></div>
+    </div>
+
+    <!-- Capacitor Core -->
+    <script src="capacitor.js"></script>
+
+    <script>
+        // Wait for Capacitor to be ready
+        document.addEventListener('DOMContentLoaded', async function () {
+            // Check if Capacitor is available
+            if (typeof Capacitor !== 'undefined') {
+                setStatus('✅ Capacitor loaded successfully', 'success');
+
+                // Check if plugin is available
+                if (Capacitor.Plugins && Capacitor.Plugins.CameraPreview) {
+                    setStatus('✅ Camera Preview plugin found', 'success');
+                } else {
+                    setStatus('⚠️ Camera Preview plugin not found - will try direct access', 'error');
+                }
+            } else {
+                setStatus('❌ Capacitor not available', 'error');
+            }
+        });
+
+        function setStatus(message, type = 'success') {
+            const statusEl = document.getElementById('status');
+            statusEl.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function getCameraPreview() {
+            // Try multiple ways to access the plugin
+            if (typeof Capacitor !== 'undefined' && Capacitor.Plugins && Capacitor.Plugins.CameraPreview) {
+                return Capacitor.Plugins.CameraPreview;
+            }
+
+            // Fallback - try global access
+            if (typeof CameraPreview !== 'undefined') {
+                return CameraPreview;
+            }
+
+            return null;
+        }
+
+        async function startCamera() {
+            const plugin = getCameraPreview();
+            if (!plugin) {
+                setStatus('❌ Camera Preview plugin not available', 'error');
+                return;
+            }
+
+            try {
+                setStatus('🔄 Starting camera...', 'success');
+                await plugin.start({
+                    position: 'rear',
+                    width: 300,
+                    height: 300,
+                    x: 0,
+                    y: 0,
+                    toBack: false,
+                    paddingBottom: 0,
+                    rotateWhenOrientationChanged: true,
+                    enableZoom: true,
+                    enableHighResolution: false
+                });
+                setStatus('✅ Camera started successfully', 'success');
+            } catch (error) {
+                setStatus('❌ Failed to start camera: ' + error.message, 'error');
+            }
+        }
+
+        async function stopCamera() {
+            const plugin = getCameraPreview();
+            if (!plugin) {
+                setStatus('❌ Camera Preview plugin not available', 'error');
+                return;
+            }
+
+            try {
+                await plugin.stop();
+                setStatus('⏹️ Camera stopped', 'success');
+            } catch (error) {
+                setStatus('❌ Failed to stop camera: ' + error.message, 'error');
+            }
+        }
+
+        async function testCapture() {
+            const plugin = getCameraPreview();
+            if (!plugin) {
+                setStatus('❌ Camera Preview plugin not available', 'error');
+                return;
+            }
+
+            try {
+                setStatus('📸 Taking photo with capture() - LISTEN FOR SOUND...', 'success');
+                const result = await plugin.capture({
+                    quality: 20
+                });
+
+                const imageData = 'data:image/jpeg;base64,' + result.value;
+
+                displayResult('Regular Capture (with sound)', imageData, result.value.length);
+                setStatus('✅ Regular capture completed - Did you hear a sound?', 'success');
+            } catch (error) {
+                setStatus('❌ Capture failed: ' + error.message, 'error');
+            }
+        }
+
+        async function testCaptureSample() {
+            const plugin = getCameraPreview();
+            if (!plugin) {
+                setStatus('❌ Camera Preview plugin not available', 'error');
+                return;
+            }
+
+            try {
+                setStatus('🤫 Taking photo with captureSample() - SHOULD BE SILENT...', 'success');
+                const result = await plugin.captureSample({
+                    quality: 20
+                });
+
+                const imageData = 'data:image/jpeg;base64,' + result.value;
+                console.log('imageData', imageData);
+
+                displayResult('Sample Capture (silent)', imageData, result.value.length);
+                setStatus('✅ Sample capture completed - Was it silent? Is it the full image?', 'success');
+            } catch (error) {
+                setStatus('❌ Sample capture failed: ' + error.message, 'error');
+            }
+        }
+
+        async function compareImages() {
+            const plugin = getCameraPreview();
+            if (!plugin) {
+                setStatus('❌ Camera Preview plugin not available', 'error');
+                return;
+            }
+
+            try {
+                setStatus('🔄 Taking both photos for comparison...', 'success');
+
+                // Take regular capture first
+                const regularResult = await plugin.capture({ quality: 20 });
+                const regularImage = 'data:image/jpeg;base64,' + regularResult.value;
+
+                // Wait a moment
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                // Take sample capture
+                const sampleResult = await plugin.captureSample({ quality: 20 });
+                const sampleImage = 'data:image/jpeg;base64,' + sampleResult.value;
+
+                // Display comparison
+                const resultsEl = document.getElementById('results');
+                resultsEl.innerHTML = `
+                    <div class="result-container">
+                        <h3>📊 Comparison Results</h3>
+                        <div class="info-text">Regular capture size: ${regularResult.value.length} characters</div>
+                        <div class="info-text">Sample capture size: ${sampleResult.value.length} characters</div>
+                        <div class="comparison">
+                            <div class="comparison-item">
+                                <h4>📸 Regular (with sound)</h4>
+                                <img src="${regularImage}" alt="Regular capture">
+                            </div>
+                            <div class="comparison-item">
+                                <h4>🤫 Sample (silent)</h4>
+                                <img src="${sampleImage}" alt="Sample capture">
+                            </div>
+                        </div>
+                        <div class="info-text" style="margin-top: 15px;">
+                            <strong>Check:</strong><br>
+                            • Both images should show the full camera view<br>
+                            • Sample capture should have been silent<br>
+                            • Regular capture should have made a sound<br>
+                            • Both should be properly oriented
+                        </div>
+                    </div>
+                `;
+
+                setStatus('✅ Comparison complete - Check the images above!', 'success');
+            } catch (error) {
+                setStatus('❌ Comparison failed: ' + error.message, 'error');
+            }
+        }
+
+        function displayResult(title, imageData, dataLength) {
+            const resultsEl = document.getElementById('results');
+            const resultHtml = `
+                <div class="result-container">
+                    <h3>${title}</h3>
+                    <div class="info-text">Base64 data length: ${dataLength} characters</div>
+                    <div class="info-text">Data preview: ${imageData.substring(0, 50)}...</div>
+                    <img src="${imageData}" alt="${title}" class="result-image">
+                </div>
+            `;
+            resultsEl.innerHTML = resultHtml;
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            setStatus('🗑️ Results cleared', 'success');
+        }
+    </script>
+</body>
+
+</html>
