@@ -69,6 +69,31 @@ export interface CameraZoomChangeEvent {
   zoom: number;
 }
 
+export interface CameraPreviewPosition {
+  /** The x position in points (iOS) or dp (Android) */
+  x: number;
+  /** The y position in points (iOS) or dp (Android) */
+  y: number;
+  /** The width in points (iOS) or dp (Android) */
+  width: number;
+  /** The height in points (iOS) or dp (Android) */
+  height: number;
+  /** The x position in physical pixels */
+  pixelX: number;
+  /** The y position in physical pixels */
+  pixelY: number;
+  /** The width in physical pixels */
+  pixelWidth: number;
+  /** The height in physical pixels */
+  pixelHeight: number;
+  /** The device scale factor (pixel density) */
+  scale: number;
+  /** The screen width in points (iOS) or dp (Android) */
+  screenWidth: number;
+  /** The screen height in points (iOS) or dp (Android) */
+  screenHeight: number;
+}
+
 export interface CameraPreviewPlugin {
   /** Starts the camera preview instance */
   start(options: CameraPreviewOptions): Promise<{}>;
@@ -90,6 +115,8 @@ export interface CameraPreviewPlugin {
   setZoom(options: CameraZoomOptions): Promise<void>;
   /** Get the current zoom level of the camera - Android / iOS only */
   getZoom(): Promise<{ zoom: number }>;
+  /** Get the preview position and dimensions - Android / iOS only */
+  getPreviewPosition(): Promise<CameraPreviewPosition>;
   /** Check camera permission */
   checkPermissions(): Promise<PermissionState>;
   /** Request camera permission */

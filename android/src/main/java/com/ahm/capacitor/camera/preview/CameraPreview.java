@@ -228,6 +228,50 @@ public class CameraPreview extends Plugin implements CameraActivity.CameraPrevie
         call.resolve(result);
     }
 
+    @PluginMethod
+    public void getPreviewPosition(PluginCall call) {
+        if (!this.hasView(call)) {
+            call.reject("Camera preview is not running");
+            return;
+        }
+
+        DisplayMetrics metrics = getBridge().getActivity().getResources().getDisplayMetrics();
+        
+        // Get the raw pixel values that were set
+        final int x = fragment.x;
+        final int y = fragment.y;
+        final int width = fragment.width;
+        final int height = fragment.height;
+        
+        // Get screen dimensions
+        Display defaultDisplay = getBridge().getActivity().getWindowManager().getDefaultDisplay();
+        final Point size = new Point();
+        defaultDisplay.getSize(size);
+        
+        // Convert pixels back to dp for consistency
+        float dpX = x / metrics.density;
+        float dpY = y / metrics.density;
+        float dpWidth = width / metrics.density;
+        float dpHeight = height / metrics.density;
+        float dpScreenWidth = size.x / metrics.density;
+        float dpScreenHeight = size.y / metrics.density;
+        
+        JSObject result = new JSObject();
+        result.put("x", dpX);
+        result.put("y", dpY);
+        result.put("width", dpWidth);
+        result.put("height", dpHeight);
+        result.put("pixelX", x);
+        result.put("pixelY", y);
+        result.put("pixelWidth", width);
+        result.put("pixelHeight", height);
+        result.put("scale", metrics.density);
+        result.put("screenWidth", dpScreenWidth);
+        result.put("screenHeight", dpScreenHeight);
+        
+        call.resolve(result);
+    }
+
     @PermissionCallback
     private void handleCameraPermissionResult(PluginCall call) {
         if (PermissionState.GRANTED.equals(getPermissionState(CAMERA_PERMISSION_ALIAS))) {

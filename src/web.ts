@@ -9,6 +9,7 @@ import type {
   CameraSampleOptions,
   CameraOpacityOptions,
   CameraZoomOptions,
+  CameraPreviewPosition,
 } from './definitions';
 
 export class CameraPreviewWeb extends WebPlugin implements CameraPreviewPlugin {
@@ -163,6 +164,10 @@ export class CameraPreviewWeb extends WebPlugin implements CameraPreviewPlugin {
 
   async getZoom(): Promise<any> {
     throw new Error('getZoom not supported under the web platform');
+  }
+
+  async getPreviewPosition(): Promise<CameraPreviewPosition> {
+    throw new Error('getPreviewPosition not supported under the web platform');
   }
 
   async checkPermissions(): Promise<PermissionState> {

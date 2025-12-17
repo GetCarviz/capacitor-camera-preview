@@ -257,6 +257,41 @@ public class CameraPreview: CAPPlugin, CameraControllerDelegate {
     }
 
     /**
+     Get the preview position and dimensions
+     */
+    @objc public func getPreviewPosition(_ call: CAPPluginCall) {
+        guard let previewView = self.previewView else {
+            call.reject("camera preview is not running")
+            return
+        }
+        
+        DispatchQueue.main.async {
+            let frame = previewView.frame
+            
+            // Get the scale factor to convert points to pixels
+            let scale = UIScreen.main.scale
+            
+            // Get screen dimensions in points
+            let screenWidth = UIScreen.main.bounds.width
+            let screenHeight = UIScreen.main.bounds.height
+            
+            call.resolve([
+                "x": frame.origin.x,
+                "y": frame.origin.y,
+                "width": frame.size.width,
+                "height": frame.size.height,
+                "pixelX": frame.origin.x * scale,
+                "pixelY": frame.origin.y * scale,
+                "pixelWidth": frame.size.width * scale,
+                "pixelHeight": frame.size.height * scale,
+                "scale": scale,
+                "screenWidth": screenWidth,
+                "screenHeight": screenHeight
+            ])
+        }
+    }
+
+    /**
      Helper method for initializing the plugin settings based on the Capacitor call
      */
     private func initializePluginSettings(call: CAPPluginCall) {
@@ -274,8 +309,8 @@ public class CameraPreview: CAPPlugin, CameraControllerDelegate {
             self.previewHeight = UIScreen.main.bounds.size.height
         }
 
-        self.x = CGFloat(call.getInt("x", 0)) / 2
-        self.y = CGFloat(call.getInt("y", 0)) / 2
+        self.x = CGFloat(call.getInt("x", 0))
+        self.y = CGFloat(call.getInt("y", 0))
 
         self.paddingBottom = CGFloat(call.getInt("paddingBottom", 0))
 
