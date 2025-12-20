@@ -630,16 +630,14 @@ public class CameraActivity extends Fragment {
 
             if (difference < bestDifference - aspectTolerance) {
                 // better aspectRatio found
-                if ((width != 0 && height != 0) || (supportedSize.width * supportedSize.height < 2048 * 1024)) {
-                    size.width = supportedSize.width;
-                    size.height = supportedSize.height;
-                    bestDifference = difference;
-                }
+                size.width = supportedSize.width;
+                size.height = supportedSize.height;
+                bestDifference = difference;
             } else if (difference < bestDifference + aspectTolerance) {
                 // same aspectRatio found (within tolerance)
                 if (width == 0 || height == 0) {
-                    // set highest supported resolution below 2 Megapixel
-                    if ((size.width < supportedSize.width) && (supportedSize.width * supportedSize.height < 2048 * 1024)) {
+                    // set highest supported resolution
+                    if (size.width < supportedSize.width) {
                         size.width = supportedSize.width;
                         size.height = supportedSize.height;
                     }
@@ -794,6 +792,9 @@ public class CameraActivity extends Fragment {
             mCamera.cancelAutoFocus();
 
             Camera.Parameters parameters = mCamera.getParameters();
+            
+            // Store the original focus mode to restore it later
+            final String originalFocusMode = parameters.getFocusMode();
 
             Rect focusRect = calculateTapArea(pointX, pointY, 1f);
             parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
@@ -806,10 +807,39 @@ public class CameraActivity extends Fragment {
 
             try {
                 setCameraParameters(parameters);
-                mCamera.autoFocus(callback);
+                
+                // Wrap the callback to restore focus mode after autofocus completes
+                mCamera.autoFocus(new Camera.AutoFocusCallback() {
+                    @Override
+                    public void onAutoFocus(boolean success, Camera camera) {
+                        // Restore the original focus mode
+                        try {
+                            Camera.Parameters params = camera.getParameters();
+                            List<String> supportedFocusModes = params.getSupportedFocusModes();
+                            
+                            // Only restore if the original mode is still supported
+                            if (supportedFocusModes != null && supportedFocusModes.contains(originalFocusMode)) {
+                                params.setFocusMode(originalFocusMode);
+                                params.setFocusAreas(null);
+                                params.setMeteringAreas(null);
+                                camera.setParameters(params);
+                                Log.d(TAG, "Focus mode restored to: " + originalFocusMode);
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error restoring focus mode: " + e.getMessage());
+                        }
+                        
+                        // Call the original callback if provided
+                        if (callback != null) {
+                            callback.onAutoFocus(success, camera);
+                        }
+                    }
+                });
             } catch (Exception e) {
                 Log.d(TAG, e.getMessage());
-                callback.onAutoFocus(false, this.mCamera);
+                if (callback != null) {
+                    callback.onAutoFocus(false, this.mCamera);
+                }
             }
         }
     }
