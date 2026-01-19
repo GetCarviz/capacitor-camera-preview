@@ -33,7 +33,7 @@ export class CameraPreviewWeb extends WebPlugin implements CameraPreviewPlugin {
     const parent = document.getElementById(options.parent);
 
     if (video) {
-      throw new Error('camera already started');
+      return {};
     }
 
     const videoElement = document.createElement('video');
