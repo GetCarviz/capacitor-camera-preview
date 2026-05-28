@@ -45,6 +45,7 @@ public class CameraActivity extends Fragment {
         void onSnapshotTakenError(String message);
         void onBackButton();
         void onCameraStarted();
+        void onCameraStartError(String message);
     }
 
     public interface ZoomChangeListener {
@@ -324,7 +325,16 @@ public class CameraActivity extends Fragment {
     public void onResume() {
         super.onResume();
 
-        mCamera = Camera.open(defaultCameraId);
+        try {
+            mCamera = Camera.open(defaultCameraId);
+        } catch (RuntimeException e) {
+            Log.e(TAG, "Failed to open camera on resume", e);
+            mCamera = null;
+            if (eventListener != null) {
+                eventListener.onCameraStartError(e.getMessage() != null ? e.getMessage() : "Failed to open camera");
+            }
+            return;
+        }
 
         if (cameraParameters != null) {
             mCamera.setParameters(cameraParameters);
@@ -789,25 +799,25 @@ public class CameraActivity extends Fragment {
 
     public void setFocusArea(final int pointX, final int pointY, final Camera.AutoFocusCallback callback) {
         if (mCamera != null) {
-            mCamera.cancelAutoFocus();
-
-            Camera.Parameters parameters = mCamera.getParameters();
-            
-            // Store the original focus mode to restore it later
-            final String originalFocusMode = parameters.getFocusMode();
-
-            Rect focusRect = calculateTapArea(pointX, pointY, 1f);
-            parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
-            parameters.setFocusAreas(Arrays.asList(new Camera.Area(focusRect, 1000)));
-
-            if (parameters.getMaxNumMeteringAreas() > 0) {
-                Rect meteringRect = calculateTapArea(pointX, pointY, 1.5f);
-                parameters.setMeteringAreas(Arrays.asList(new Camera.Area(meteringRect, 1000)));
-            }
-
             try {
+                mCamera.cancelAutoFocus();
+
+                Camera.Parameters parameters = mCamera.getParameters();
+
+                // Store the original focus mode to restore it later
+                final String originalFocusMode = parameters.getFocusMode();
+
+                Rect focusRect = calculateTapArea(pointX, pointY, 1f);
+                parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+                parameters.setFocusAreas(Arrays.asList(new Camera.Area(focusRect, 1000)));
+
+                if (parameters.getMaxNumMeteringAreas() > 0) {
+                    Rect meteringRect = calculateTapArea(pointX, pointY, 1.5f);
+                    parameters.setMeteringAreas(Arrays.asList(new Camera.Area(meteringRect, 1000)));
+                }
+
                 setCameraParameters(parameters);
-                
+
                 // Wrap the callback to restore focus mode after autofocus completes
                 mCamera.autoFocus(new Camera.AutoFocusCallback() {
                     @Override

@@ -441,6 +441,19 @@ public class CameraPreview extends Plugin implements CameraActivity.CameraPrevie
     }
 
     @Override
+    public void onCameraStartError(String message) {
+        PluginCall pluginCall = bridge.getSavedCall(cameraStartCallbackId);
+        if (pluginCall != null) {
+            pluginCall.reject(message);
+            bridge.releaseCall(pluginCall);
+            cameraStartCallbackId = "";
+        }
+        JSObject result = new JSObject();
+        result.put("message", message);
+        notifyListeners("cameraStartError", result);
+    }
+
+    @Override
     public void onZoomChanged(float zoom) {
         JSObject result = new JSObject();
         result.put("zoom", zoom);
@@ -477,7 +490,7 @@ public class CameraPreview extends Plugin implements CameraActivity.CameraPrevie
                 new View.OnTouchListener() {
                     @Override
                     public boolean onTouch(View v, MotionEvent event) {
-                        if ((null != fragment) && (fragment.toBack == true)) {
+                        if (fragment != null && fragment.toBack && fragment.frameContainerLayout != null) {
                             fragment.frameContainerLayout.dispatchTouchEvent(event);
                         }
                         return false;

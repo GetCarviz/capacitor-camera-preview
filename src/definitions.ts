@@ -69,6 +69,11 @@ export interface CameraZoomChangeEvent {
   zoom: number;
 }
 
+export interface CameraStartErrorEvent {
+  /** The error message from the native camera service */
+  message: string;
+}
+
 export interface CameraPreviewPosition {
   /** The x position in points (iOS) or dp (Android) */
   x: number;
@@ -124,6 +129,11 @@ export interface CameraPreviewPlugin {
 
   /** Listen for zoom changes - Android / iOS only */
   addListener(eventName: 'zoomChanged', listenerFunc: (event: CameraZoomChangeEvent) => void): Promise<PluginListenerHandle>;
+  /** Listen for camera start failures (e.g. the camera service rejecting an open on resume) - Android only */
+  addListener(
+    eventName: 'cameraStartError',
+    listenerFunc: (event: CameraStartErrorEvent) => void,
+  ): Promise<PluginListenerHandle>;
   /** Remove all listeners for this plugin */
   removeAllListeners(): Promise<void>;
 }
