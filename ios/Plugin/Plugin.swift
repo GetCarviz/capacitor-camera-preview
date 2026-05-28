@@ -42,7 +42,7 @@ public class CameraPreview: CAPPlugin, CameraControllerDelegate {
             self?.initializePluginSettings(call: call)
 
             if let captureSession = self?.cameraController.captureSession, captureSession.isRunning {
-                call.reject("camera already started")
+                call.resolve()
                 return
             }
 

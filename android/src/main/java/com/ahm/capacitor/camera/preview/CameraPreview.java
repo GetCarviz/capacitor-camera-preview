@@ -394,7 +394,7 @@ public class CameraPreview extends Plugin implements CameraActivity.CameraPrevie
                             bridge.saveCall(call);
                             cameraStartCallbackId = call.getCallbackId();
                         } else {
-                            call.reject("camera already started");
+                            call.resolve();
                         }
                     }
                 }
