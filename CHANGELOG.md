@@ -1,5 +1,11 @@
 # Changelog
 
+## [8.0.3]
+
+### Fixed
+
+* [Android] Fix `RuntimeException: set display orientation failed` crash on orientation/configuration change. `Preview.setCameraDisplayOrientation()` now guards the deprecated Camera1 `Camera.setDisplayOrientation()` call against an invalid (released / mid-teardown / not-yet-opened) camera handle, and `startCamera()` re-applies the orientation on a validated camera so the preview never gets stuck rotated.
+
 ## [v6.0.0](https://github.com/capacitor-community/camera-preview/compare/v5.0.0...v6.0.0) (2024-05-06)
 
 ### Chores
