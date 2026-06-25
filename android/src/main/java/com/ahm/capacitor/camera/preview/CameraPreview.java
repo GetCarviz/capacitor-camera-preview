@@ -189,6 +189,17 @@ public class CameraPreview extends Plugin implements CameraActivity.CameraPrevie
     }
 
     @PluginMethod
+    public void resetFocus(PluginCall call) {
+        if (!this.hasCamera(call)) {
+            call.reject("Camera is not running");
+            return;
+        }
+
+        fragment.resetFocus();
+        call.resolve();
+    }
+
+    @PluginMethod
     public void setZoom(PluginCall call) {
         if (!this.hasCamera(call)) {
             call.reject("Camera is not running");

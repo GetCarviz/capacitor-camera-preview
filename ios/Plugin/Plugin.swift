@@ -257,6 +257,21 @@ public class CameraPreview: CAPPlugin, CameraControllerDelegate {
     }
 
     /**
+     Reset the focus back to continuous auto-focus, discarding any manual tap-to-focus
+     */
+    @objc func resetFocus(_ call: CAPPluginCall) {
+        guard let captureSession = self.cameraController.captureSession, captureSession.isRunning else {
+            call.reject("camera is not running")
+            return
+        }
+
+        DispatchQueue.main.async {
+            self.cameraController.resetFocus()
+            call.resolve()
+        }
+    }
+
+    /**
      Get the preview position and dimensions
      */
     @objc public func getPreviewPosition(_ call: CAPPluginCall) {
