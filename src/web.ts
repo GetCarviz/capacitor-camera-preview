@@ -166,6 +166,10 @@ export class CameraPreviewWeb extends WebPlugin implements CameraPreviewPlugin {
     throw new Error('getZoom not supported under the web platform');
   }
 
+  async resetFocus(): Promise<void> {
+    throw new Error('resetFocus not supported under the web platform');
+  }
+
   async getPreviewPosition(): Promise<CameraPreviewPosition> {
     throw new Error('getPreviewPosition not supported under the web platform');
   }

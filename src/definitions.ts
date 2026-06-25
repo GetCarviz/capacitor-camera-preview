@@ -122,13 +122,18 @@ export interface CameraPreviewPlugin {
   getZoom(): Promise<{ zoom: number }>;
   /** Get the preview position and dimensions - Android / iOS only */
   getPreviewPosition(): Promise<CameraPreviewPosition>;
+  /** Reset the focus to continuous auto-focus, discarding any manual (tap-to-focus) focus - Android / iOS only */
+  resetFocus(): Promise<void>;
   /** Check camera permission */
   checkPermissions(): Promise<PermissionState>;
   /** Request camera permission */
   requestPermissions(): Promise<PermissionState>;
 
   /** Listen for zoom changes - Android / iOS only */
-  addListener(eventName: 'zoomChanged', listenerFunc: (event: CameraZoomChangeEvent) => void): Promise<PluginListenerHandle>;
+  addListener(
+    eventName: 'zoomChanged',
+    listenerFunc: (event: CameraZoomChangeEvent) => void,
+  ): Promise<PluginListenerHandle>;
   /** Listen for camera start failures (e.g. the camera service rejecting an open on resume) - Android only */
   addListener(
     eventName: 'cameraStartError',

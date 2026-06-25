@@ -58,7 +58,11 @@ class CameraController: NSObject {
 
     /** Video zoom factor that is used for manually zooming in and out via pinch gesture */
     var videoZoomFactor: CGFloat = 1
-    
+
+    /** True when the user has set focus manually via tap-to-focus. While true, the manual focus is
+     kept (locked) instead of being overridden by continuous auto-focus when a photo is captured. */
+    var manualFocusActive = false
+
     /** Delegate for camera events */
     weak var delegate: CameraControllerDelegate?
 
@@ -305,6 +309,37 @@ class CameraController: NSObject {
         self.photoCaptureCompletionBlock = completion
     }
 
+    /** Reset the focus (and exposure) back to continuous auto-focus, discarding any manual
+     tap-to-focus the user may have set. */
+    func resetFocus() {
+        guard let device = self.currentCamera else { return }
+
+        do {
+            try device.lockForConfiguration()
+            defer { device.unlockForConfiguration() }
+
+            let focusMode = AVCaptureDevice.FocusMode.continuousAutoFocus
+            if device.isFocusModeSupported(focusMode) {
+                if device.isFocusPointOfInterestSupported {
+                    device.focusPointOfInterest = CGPoint(x: 0.5, y: 0.5)
+                }
+                device.focusMode = focusMode
+            }
+
+            let exposureMode = AVCaptureDevice.ExposureMode.continuousAutoExposure
+            if device.isExposureModeSupported(exposureMode) {
+                if device.isExposurePointOfInterestSupported {
+                    device.exposurePointOfInterest = CGPoint(x: 0.5, y: 0.5)
+                }
+                device.exposureMode = exposureMode
+            }
+
+            self.manualFocusActive = false
+        } catch {
+            debugPrint(error)
+        }
+    }
+
     func captureSample(completion: @escaping (UIImage?, Error?) -> Void) {
         guard let captureSession = captureSession, captureSession.isRunning else {
             completion(nil, CameraControllerError.captureSessionIsMissing)
@@ -531,7 +566,13 @@ extension CameraController: AVCapturePhotoCaptureDelegate {
             self.photoCaptureCompletionBlock?(nil, CameraControllerError.unknown)
             return
         }
-        
+
+        // Reset to continuous auto-focus after each photo so the next capture refocuses
+        // automatically unless the user taps to focus again.
+        if self.manualFocusActive {
+            self.resetFocus()
+        }
+
         self.photoCaptureCompletionBlock?(image.fixedOrientation(), nil)
     }
 }
@@ -595,17 +636,22 @@ extension CameraController: UIGestureRecognizerDelegate {
             try device.lockForConfiguration()
             defer { device.unlockForConfiguration() }
 
-            let focusMode = AVCaptureDevice.FocusMode.continuousAutoFocus
+            // Use one-shot auto-focus so the focus locks on the tapped point instead of being
+            // re-evaluated continuously (which would override the user's manual focus on capture).
+            let focusMode = AVCaptureDevice.FocusMode.autoFocus
             if device.isFocusPointOfInterestSupported && device.isFocusModeSupported(focusMode) {
                 device.focusPointOfInterest = CGPoint(x: CGFloat(devicePoint.x), y: CGFloat(devicePoint.y))
                 device.focusMode = focusMode
             }
 
-            let exposureMode = AVCaptureDevice.ExposureMode.continuousAutoExposure
+            let exposureMode = AVCaptureDevice.ExposureMode.autoExpose
             if device.isExposurePointOfInterestSupported && device.isExposureModeSupported(exposureMode) {
                 device.exposurePointOfInterest = CGPoint(x: CGFloat(devicePoint.x), y: CGFloat(devicePoint.y))
                 device.exposureMode = exposureMode
             }
+
+            // Remember that the user set focus manually so capture keeps it instead of refocusing.
+            self.manualFocusActive = true
         } catch {
             debugPrint(error)
         }

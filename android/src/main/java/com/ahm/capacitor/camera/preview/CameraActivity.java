@@ -61,6 +61,10 @@ public class CameraActivity extends Fragment {
     private Preview mPreview;
     private boolean canTakePicture = true;
 
+    // True when the user has set focus manually via tap-to-focus. While true, the manual focus is
+    // kept (locked) instead of being restored to continuous auto-focus, so the captured photo uses it.
+    private boolean manualFocusActive = false;
+
     private View view;
     private Camera.Parameters cameraParameters;
     private Camera mCamera;
@@ -197,6 +201,9 @@ public class CameraActivity extends Fragment {
                                             } else if (tapToTakePicture) {
                                                 takePicture(0, 0, 85);
                                             } else if (tapToFocus) {
+                                                // Remember the manual focus so it is kept (locked) and not
+                                                // overridden by continuous auto-focus when capturing.
+                                                manualFocusActive = true;
                                                 setFocusArea(
                                                     (int) event.getX(0),
                                                     (int) event.getY(0),
@@ -586,6 +593,11 @@ public class CameraActivity extends Fragment {
                 Log.d(TAG, "CameraPreview onPictureTaken general exception");
             } finally {
                 canTakePicture = true;
+                // Reset to continuous auto-focus after each photo so the next capture refocuses
+                // automatically unless the user taps to focus again.
+                if (manualFocusActive) {
+                    resetFocus();
+                }
                 mCamera.startPreview();
             }
         }
@@ -822,23 +834,27 @@ public class CameraActivity extends Fragment {
                 mCamera.autoFocus(new Camera.AutoFocusCallback() {
                     @Override
                     public void onAutoFocus(boolean success, Camera camera) {
-                        // Restore the original focus mode
+                        // Restore the original focus mode, unless the user set focus manually via
+                        // tap-to-focus. In that case keep FOCUS_MODE_AUTO with the focus areas so the
+                        // focus stays locked on the tapped point for the next capture.
                         try {
-                            Camera.Parameters params = camera.getParameters();
-                            List<String> supportedFocusModes = params.getSupportedFocusModes();
-                            
-                            // Only restore if the original mode is still supported
-                            if (supportedFocusModes != null && supportedFocusModes.contains(originalFocusMode)) {
-                                params.setFocusMode(originalFocusMode);
-                                params.setFocusAreas(null);
-                                params.setMeteringAreas(null);
-                                camera.setParameters(params);
-                                Log.d(TAG, "Focus mode restored to: " + originalFocusMode);
+                            if (!manualFocusActive) {
+                                Camera.Parameters params = camera.getParameters();
+                                List<String> supportedFocusModes = params.getSupportedFocusModes();
+
+                                // Only restore if the original mode is still supported
+                                if (supportedFocusModes != null && supportedFocusModes.contains(originalFocusMode)) {
+                                    params.setFocusMode(originalFocusMode);
+                                    params.setFocusAreas(null);
+                                    params.setMeteringAreas(null);
+                                    camera.setParameters(params);
+                                    Log.d(TAG, "Focus mode restored to: " + originalFocusMode);
+                                }
                             }
                         } catch (Exception e) {
                             Log.e(TAG, "Error restoring focus mode: " + e.getMessage());
                         }
-                        
+
                         // Call the original callback if provided
                         if (callback != null) {
                             callback.onAutoFocus(success, camera);
@@ -851,6 +867,45 @@ public class CameraActivity extends Fragment {
                     callback.onAutoFocus(false, this.mCamera);
                 }
             }
+        }
+    }
+
+    /**
+     * Reset the focus back to continuous auto-focus, discarding any manual (tap-to-focus) focus.
+     * Clears the focus/metering areas and resumes the device's continuous focus mode if supported.
+     */
+    public void resetFocus() {
+        manualFocusActive = false;
+
+        if (mCamera == null) {
+            return;
+        }
+
+        try {
+            mCamera.cancelAutoFocus();
+
+            Camera.Parameters parameters = mCamera.getParameters();
+            List<String> supportedFocusModes = parameters.getSupportedFocusModes();
+
+            if (supportedFocusModes != null) {
+                if (supportedFocusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
+                    parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+                } else if (supportedFocusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
+                    parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+                }
+            }
+
+            if (parameters.getMaxNumFocusAreas() > 0) {
+                parameters.setFocusAreas(null);
+            }
+            if (parameters.getMaxNumMeteringAreas() > 0) {
+                parameters.setMeteringAreas(null);
+            }
+
+            setCameraParameters(parameters);
+            Log.d(TAG, "Focus reset to continuous auto-focus");
+        } catch (Exception e) {
+            Log.e(TAG, "Error resetting focus: " + e.getMessage());
         }
     }
 
