@@ -59,7 +59,7 @@
     "dist/",
     "ios/",
     "android/",
-    "CarvizCapacitorCameraPreview.podspec"
+    "GetcarvizCapacitorCameraPreview.podspec"
   ],
   "keywords": [
     "capacitor",
