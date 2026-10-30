@@ -3,11 +3,11 @@ require 'json'
 package = JSON.parse(File.read(File.join(__dir__, 'package.json')))
 
 Pod::Spec.new do |s|
-  s.name = 'CarvizCapacitorCameraPreview'
+  s.name = 'GetcarvizCapacitorCameraPreview'
   s.version = package['version']
   s.summary = package['description']
   s.license = package['license']
-  s.homepage = 'https://github.com/GetCarviz/capacitor-camera-preview.git'
+  s.homepage = 'https://github.com/GetCarviz/capacitor-camera-preview'
   s.author = package['author']
   s.source = { :git => 'https://github.com/GetCarviz/capacitor-camera-preview.git', :tag => s.version.to_s }
   s.source_files = 'ios/Plugin/**/*.{swift,h,m,c,cc,mm,cpp}'

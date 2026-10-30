@@ -1,5 +1,5 @@
 {
-  "name": "@carviz/capacitor-camera-preview",
+  "name": "@getcarviz/capacitor-camera-preview",
   "version": "8.0.4",
   "description": "Fork of the capacitor-community/camera-preview plugin focusing on high resolution photos without bloating up the code.",
   "type": "module",
@@ -25,6 +25,9 @@
   },
   "author": "Evan Barberousse",
   "license": "MIT",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "devDependencies": {
     "@capacitor/android": "^8.0.0",
     "@capacitor/cli": "^8.0.0",
@@ -56,7 +59,7 @@
     "dist/",
     "ios/",
     "android/",
-    "CarvizCapacitorCameraPreview.podspec"
+    "GetcarvizCapacitorCameraPreview.podspec"
   ],
   "keywords": [
     "capacitor",

@@ -1,7 +1,7 @@
 <h1 align="center">📷</h1>
 
 <h3 align="center">Capacitor Camera Preview</h3>
-<p align="center"><strong><code>@carviz/capacitor-camera-preview</code></strong></p>
+<p align="center"><strong><code>@getcarviz/capacitor-camera-preview</code></strong></p>
 <br>
 <p align="center"><strong>CAPACITOR 8</strong></p><br>
 
@@ -20,13 +20,29 @@ Version 8 of this plugin requires Capacitor 8.
 
 # Installation
 
-```
-yarn add @carviz/capacitor-camera-preview
+This package is published on GitHub Packages, which always requires a token, even to install.
 
-or
+1. Give your GitHub CLI token access to packages, then expose it to npm/pnpm (e.g. in `~/.zshrc`):
 
-npm install @carviz/capacitor-camera-preview
-```
+   ```bash
+   gh auth refresh -s write:packages      # write:packages includes read
+   export NODE_AUTH_TOKEN="$(gh auth token 2>/dev/null)"
+   ```
+
+2. Add an `.npmrc` to the consuming project (safe to commit, it only references the variable):
+
+   ```
+   @getcarviz:registry=https://npm.pkg.github.com
+   //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+   ```
+
+3. Install:
+
+   ```
+   npm install @getcarviz/capacitor-camera-preview
+   ```
+
+Check your setup with `npm whoami --registry=https://npm.pkg.github.com`. In GitHub Actions, use `NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}` with `permissions: packages: read`, and grant the consuming repo read access in the package settings (**Manage Actions access**).
 
 Then run
 ```
@@ -227,3 +243,26 @@ myCamera.setOpacity({opacity: 0.4});
 | AUTO    | string  | auto    |               |
 | RED_EYE | string  | red-eye | Android Only  |
 | TORCH   | string  | torch   |               |
+
+# Publishing
+
+Releases are published to GitHub Packages by the **Publish Released Package** workflow, using `GITHUB_TOKEN`.
+
+1. Bump `version` in `package.json` (e.g. `npm version patch --no-git-tag-version`) and merge it into `main`.
+2. Create a GitHub release with the matching tag (e.g. `v8.0.5`) on `main`. Leave **Set as a pre-release** unchecked: the workflow only runs on full releases.
+3. Check that the workflow passes and that the new version shows up under **Packages** on the repo page.
+
+A published version can't be overwritten: fix forward with a new version.
+
+## Testing a pre-release
+
+To try a build without using up the final version number, publish a pre-release from your machine (with the `.npmrc` and token from [Installation](#installation)):
+
+```bash
+npm version 8.0.5-beta.0 --no-git-tag-version   # next attempt: npm version prerelease --preid beta --no-git-tag-version
+npm install --ignore-scripts
+npm publish --tag beta                           # prepublishOnly builds dist/ first
+git restore package.json package-lock.json
+```
+
+`^8.0.5` ranges never resolve to a pre-release; install it explicitly with `@getcarviz/capacitor-camera-preview@beta`.
