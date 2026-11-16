@@ -1,5 +1,11 @@
 # Changelog
 
+## [8.1.0]
+
+### Added
+
+* [iOS] Swift Package Manager support (`Package.swift`). The plugin now registers through `CAPBridgedPlugin`; the CocoaPods podspec keeps working.
+
 ## [8.0.3]
 
 ### Fixed
