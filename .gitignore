@@ -12,3 +12,7 @@ ios/Plugin.xcworkspace/xcuserdata
 dist/
 .DS_Store
 .husky/
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved

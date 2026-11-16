@@ -1,6 +1,6 @@
 {
   "name": "@getcarviz/capacitor-camera-preview",
-  "version": "8.0.4",
+  "version": "8.1.0",
   "description": "Fork of the capacitor-community/camera-preview plugin focusing on high resolution photos without bloating up the code.",
   "type": "module",
   "main": "dist/plugin.cjs.js",
@@ -9,7 +9,7 @@
   "unpkg": "dist/plugin.js",
   "scripts": {
     "verify": "npm run verify:ios && npm run verify:android && npm run verify:web",
-    "verify:ios": "cd ios && pod install && xcodebuild -workspace Plugin.xcworkspace -scheme Plugin -destination generic/platform=iOS && cd ..",
+    "verify:ios": "xcodebuild -scheme GetcarvizCapacitorCameraPreview -destination generic/platform=iOS",
     "verify:android": "cd android && ./gradlew clean build test && cd ..",
     "verify:web": "npm run build",
     "build": "npm run clean && tsc && rollup -c rollup.config.mjs",
@@ -59,7 +59,8 @@
     "dist/",
     "ios/",
     "android/",
-    "GetcarvizCapacitorCameraPreview.podspec"
+    "GetcarvizCapacitorCameraPreview.podspec",
+    "Package.swift"
   ],
   "keywords": [
     "capacitor",
