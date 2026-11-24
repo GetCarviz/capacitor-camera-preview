@@ -1,5 +1,11 @@
 # Changelog
 
+## [8.0.5]
+
+### Added
+
+* [iOS] Add `Package.swift` and switch plugin registration from the Objective-C `CAP_PLUGIN` macro to `CAPBridgedPlugin` conformance, so the plugin can be consumed via Swift Package Manager (CocoaPods trunk becomes read-only 2026-12-02).
+
 ## [8.0.3]
 
 ### Fixed
