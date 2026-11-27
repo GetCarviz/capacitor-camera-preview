@@ -59,6 +59,7 @@
     "dist/",
     "ios/",
     "android/",
+    "Package.swift",
     "GetcarvizCapacitorCameraPreview.podspec"
   ],
   "keywords": [
