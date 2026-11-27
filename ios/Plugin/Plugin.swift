@@ -6,7 +6,24 @@ import AVFoundation
  * here: https://capacitor.ionicframework.com/docs/plugins/ios
  */
 @objc(CameraPreview)
-public class CameraPreview: CAPPlugin, CameraControllerDelegate {
+public class CameraPreview: CAPPlugin, CAPBridgedPlugin, CameraControllerDelegate {
+    public let identifier = "CameraPreview"
+    public let jsName = "CameraPreview"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "start", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "stop", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "capture", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "captureSample", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "flip", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getSupportedFlashModes", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setFlashMode", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setZoom", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getZoom", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "checkPermissions", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "requestPermissions", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getPreviewPosition", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "resetFocus", returnType: CAPPluginReturnPromise)
+    ]
     let cameraController = CameraController()
     var cameraPosition: CameraPosition = .rear
     var x: CGFloat = 0.0

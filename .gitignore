@@ -12,3 +12,5 @@ ios/Plugin.xcworkspace/xcuserdata
 dist/
 .DS_Store
 .husky/
+
+.build/
